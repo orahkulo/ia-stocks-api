@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-model = joblib.load('modelo_ia_stocks.pkl')  # Certifique-se de que o .pkl está na mesma pasta
+model = joblib.load('modelo_xgb.pkl')  # Certifique-se de que o .pkl está na mesma pasta
 
 @app.route('/predict', methods=['POST'])
 def predict():
