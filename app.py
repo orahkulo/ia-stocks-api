@@ -9,6 +9,7 @@ model = joblib.load('modelo_xgb.pkl')  # Modelo salvo no Colab
 def predict():
     try:
         data = request.get_json(force=True)
+        print("📥 Dados recebidos:", data)
         features = np.array([[data['ma10'], data['ma50'], data['rsi']]])
 
         prediction = int(model.predict(features)[0])
