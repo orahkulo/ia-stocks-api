@@ -9,6 +9,7 @@ model = joblib.load('modelo_xgb.pkl')  # Certifique-se que está no mesmo diret�
 def predict():
     try:
         # força leitura como JSON, mesmo sem header correto
+        print("🔍 Conteúdo bruto:", request.data.decode("utf-8"))
         data = request.get_json(force=True)
         print("📥 Dados recebidos:", data)
 
