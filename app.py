@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-model = joblib.load('modelo_xgb.pkl')  # Certifique-se que está no mesmo diretório
+model = joblib.load('modelo_xgb.pkl')  # Certifique-se que este arquivo está no mesmo diretório
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -11,14 +11,13 @@ def predict():
         data = request.get_json(force=True)
         print("📥 Dados recebidos:", data)
 
-        # forçar conversão para float
+        # forçar conversão de entrada para float (evita erro de unicode do XGBoost)
         features = np.array([[float(data['ma10']), float(data['ma50']), float(data['rsi'])]])
-        prediction = int(model.predict(features)[0])
 
+        prediction = int(model.predict(features)[0])
+        proba = None
         if hasattr(model, "predict_proba"):
             proba = float(model.predict_proba(features)[0][1])
-        else:
-            proba = None
 
         return jsonify({
             "prediction": prediction,
