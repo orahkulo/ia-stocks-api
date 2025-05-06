@@ -8,16 +8,11 @@ model = joblib.load('modelo_xgb.pkl')  # Certifique-se que está no mesmo diret�
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # força leitura como JSON, mesmo sem header correto
-        print("🔍 Conteúdo bruto:", request.data.decode("utf-8"))
         data = request.get_json(force=True)
         print("📥 Dados recebidos:", data)
 
-        # verifica presença dos campos
-        if not all(k in data for k in ("ma10", "ma50", "rsi")):
-            return jsonify({"error": "Campos ma10, ma50, rsi obrigatórios"}), 400
-
-        features = np.array([[data['ma10'], data['ma50'], data['rsi']]])
+        # forçar conversão para float
+        features = np.array([[float(data['ma10']), float(data['ma50']), float(data['rsi'])]])
         prediction = int(model.predict(features)[0])
 
         if hasattr(model, "predict_proba"):
