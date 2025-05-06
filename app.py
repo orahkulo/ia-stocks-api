@@ -3,25 +3,25 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
+model = joblib.load('modelo_ia_stocks.pkl')  # Certifique-se de que o .pkl está na mesma pasta
 
-# Carregar modelo
-model = joblib.load('modelo_xgb.pkl')  # troque pelo seu nome, se diferente
-
-# Endpoint para predição
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        features = np.array([[data['ma10'], data['ma50'], data['rsi']]])
+        prediction = model.predict(features)[0]
+        probability = model.predict_proba(features)[0][1]
+        return jsonify({
+            'prediction': int(prediction),
+            'probability': round(float(probability), 4)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
-    # Exemplo: ['ma10', 'ma50', 'rsi']
-    features = np.array([[data['ma10'], data['ma50'], data['rsi']]])  # ajuste se usar mais/menos features
-
-    prediction = model.predict(features)[0]
-    proba = model.predict_proba(features)[0].tolist()
-
-    return jsonify({
-        'label': int(prediction),
-        'probabilidade': proba
-    })
+@app.route('/')
+def home():
+    return "API de previsão de ações ativa."
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8080)
