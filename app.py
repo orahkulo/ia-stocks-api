@@ -3,21 +3,29 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-model = joblib.load('modelo_xgb.pkl')  # Certifique-se de que o .pkl está na mesma pasta
+model = joblib.load('modelo_xgb.pkl')  # Modelo salvo no Colab
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
         features = np.array([[data['ma10'], data['ma50'], data['rsi']]])
-        prediction = model.predict(features)[0]
-        probability = model.predict_proba(features)[0][1]
+
+        prediction = int(model.predict(features)[0])
+
+        # verificar se o modelo tem o método predict_proba
+        if hasattr(model, "predict_proba"):
+            proba = float(model.predict_proba(features)[0][1])
+        else:
+            proba = None
+
         return jsonify({
-            'prediction': int(prediction),
-            'probability': round(float(probability), 4)
+            "prediction": prediction,
+            "probability": round(proba, 4) if proba is not None else None
         })
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/')
 def home():
