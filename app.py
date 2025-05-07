@@ -9,17 +9,20 @@ model = joblib.load('modelo_xgb.pkl')  # Certifique-se de que este arquivo está
 def predict():
     try:
         data = request.get_json(force=True)
-        print("📥 Dados recebidos:", data)
+        print("📥 Dados recebidos:", data)  # Exibe o payload recebido
 
-        # Lista de features esperadas, na ordem correta
-        features_ordem = [
+        # Confirma que todas as features esperadas estão presentes
+        expected_keys = [
             'ma10', 'ma50', 'rsi',
             'macd_line', 'macd_signal', 'macd_hist',
             'bb_upper', 'bb_middle', 'bb_lower'
         ]
+        for key in expected_keys:
+            if key not in data or data[key] is None:
+                raise ValueError(f"Campo ausente ou nulo: {key}")
 
-        # Extrai as features na ordem correta e força conversão para float
-        features = np.array([[float(data[f]) for f in features_ordem]])
+        # Converte para float com validação
+        features = np.array([[float(data[key]) for key in expected_keys]])
 
         prediction = int(model.predict(features)[0])
 
