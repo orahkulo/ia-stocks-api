@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
+import logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 model = joblib.load('modelo_xgb.pkl')  # Certifique-se de que este arquivo está no mesmo diretório
@@ -9,7 +11,7 @@ model = joblib.load('modelo_xgb.pkl')  # Certifique-se de que este arquivo está
 def predict():
     try:
         data = request.get_json(force=True)
-        print("📥 Dados recebidos:", data)  # Exibe o payload recebido
+        logging.info("📥 Dados recebidos: %s", data) # Exibe o payload recebido
 
         # Confirma que todas as features esperadas estão presentes
         expected_keys = [
@@ -41,7 +43,7 @@ def predict():
         })
 
     except Exception as e:
-        print("❌ Erro interno:", str(e))
+        logging.error("❌ Erro interno: %s", str(e))
         return jsonify({"error": str(e)}), 400
 
 @app.route('/')
