@@ -9,34 +9,35 @@ logging.basicConfig(level=logging.INFO)
 # Carregar modelo treinado
 model = joblib.load('modelo_xgb.pkl')
 
+# Lista completa com as 21 features usadas no modelo
+expected_keys = [
+    'ma10', 'ma50', 'rsi',
+    'macd_line', 'macd_signal', 'macd_hist',
+    'bb_upper', 'bb_middle', 'bb_lower',
+    'vix', 'usdbrl', 'selic',
+    'delta_vix', 'delta_usdbrl', 'delta_selic',
+    'delta_vix_lag1', 'delta_usdbrl_lag1', 'delta_selic_lag1',
+    'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3'
+]
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json(force=True)
         logging.info("📥 Dados recebidos: %s", data)
 
-        # Esperadas 12 features
-        expected_keys = [
-        'ma10', 'ma50', 'rsi',
-        'macd_line', 'macd_signal', 'macd_hist',
-        'bb_upper', 'bb_middle', 'bb_lower',
-        'vix', 'usdbrl', 'selic',
-        'delta_vix', 'delta_usdbrl', 'delta_selic',
-        'delta_vix_lag1', 'delta_usdbrl_lag1', 'delta_selic_lag1',
-        'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3'
-        ]
-        
-        # Validação dos campos
+        # Verificar se todos os campos esperados estão presentes e não nulos
         for key in expected_keys:
             if key not in data or data[key] is None:
                 raise ValueError(f"Campo ausente ou nulo: {key}")
 
-        # Conversão para float
+        # Construir vetor de features
         features = np.array([[float(data[key]) for key in expected_keys]])
 
+        # Verificar compatibilidade com o modelo
         if features.shape[1] != model.n_features_in_:
-        raise ValueError(f"Quantidade de features incorreta: esperado {model.n_features_in_}, recebido {features.shape[1]}")
-        
+            raise ValueError(f"Quantidade de features incorreta: esperado {model.n_features_in_}, recebido {features.shape[1]}")
+
         # Previsão
         prediction = int(model.predict(features)[0])
         proba_up, proba_down = None, None
