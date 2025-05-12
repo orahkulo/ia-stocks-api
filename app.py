@@ -9,15 +9,24 @@ logging.basicConfig(level=logging.INFO)
 # Carregar modelo treinado
 model = joblib.load('modelo_xgb.pkl')
 
-# Lista completa com as 21 features usadas no modelo
-expected_keys = [
+# Listas de features por tipo de ativo
+expected_keys_br = [
     'ma10', 'ma50', 'rsi',
     'macd_line', 'macd_signal', 'macd_hist',
     'bb_upper', 'bb_middle', 'bb_lower',
     'vix', 'usdbrl', 'selic',
+    'inflacao', 'delta_inflacao', 'delta_inflacao_lag1', 'delta_inflacao_ma3',
     'delta_vix', 'delta_usdbrl', 'delta_selic',
     'delta_vix_lag1', 'delta_usdbrl_lag1', 'delta_selic_lag1',
     'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3'
+]
+
+expected_keys_us = [
+    'ma10', 'ma50', 'rsi',
+    'macd_line', 'macd_signal', 'macd_hist',
+    'bb_upper', 'bb_middle', 'bb_lower',
+    'vix',
+    'inflacao', 'delta_inflacao', 'delta_inflacao_lag1', 'delta_inflacao_ma3'
 ]
 
 @app.route('/predict', methods=['POST'])
@@ -25,6 +34,10 @@ def predict():
     try:
         data = request.get_json(force=True)
         logging.info("📥 Dados recebidos: %s", data)
+
+        # Determina quais chaves são esperadas com base no campo 'ativo_brasileiro'
+        is_br = data.get("ativo_brasileiro", True)
+        expected_keys = expected_keys_br if is_br else expected_keys_us
 
         # Verificar se todos os campos esperados estão presentes e não nulos
         for key in expected_keys:
