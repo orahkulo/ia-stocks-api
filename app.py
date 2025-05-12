@@ -6,19 +6,19 @@ import logging
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Carregar modelo treinado
+# ✅ Carregar modelo treinado
 model = joblib.load('modelo_xgb.pkl')
 
-# Listas de features por tipo de ativo
+# ✅ Listas de features por tipo de ativo
 expected_keys_br = [
     'ma10', 'ma50', 'rsi',
     'macd_line', 'macd_signal', 'macd_hist',
     'bb_upper', 'bb_middle', 'bb_lower',
     'vix', 'usdbrl', 'selic',
-    'inflacao', 'delta_inflacao', 'delta_inflacao_lag1', 'delta_inflacao_ma3',
-    'delta_vix', 'delta_usdbrl', 'delta_selic',
-    'delta_vix_lag1', 'delta_usdbrl_lag1', 'delta_selic_lag1',
-    'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3'
+    'inflacao_index', 'inflacao_mom', 'inflacao_yoy',
+    'delta_vix', 'delta_usdbrl', 'delta_selic', 'delta_inflacao_index',
+    'delta_vix_lag1', 'delta_usdbrl_lag1', 'delta_selic_lag1', 'delta_inflacao_index_lag1',
+    'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3', 'delta_inflacao_index_ma3'
 ]
 
 expected_keys_us = [
@@ -26,7 +26,10 @@ expected_keys_us = [
     'macd_line', 'macd_signal', 'macd_hist',
     'bb_upper', 'bb_middle', 'bb_lower',
     'vix',
-    'inflacao', 'delta_inflacao', 'delta_inflacao_lag1', 'delta_inflacao_ma3'
+    'inflacao_index', 'inflacao_mom', 'inflacao_yoy',
+    'delta_vix', 'delta_inflacao_index',
+    'delta_vix_lag1', 'delta_inflacao_index_lag1',
+    'delta_vix_ma3', 'delta_inflacao_index_ma3'
 ]
 
 @app.route('/predict', methods=['POST'])
@@ -35,11 +38,10 @@ def predict():
         data = request.get_json(force=True)
         logging.info("📥 Dados recebidos: %s", data)
 
-        # Determina quais chaves são esperadas com base no campo 'ativo_brasileiro'
         is_br = data.get("ativo_brasileiro", True)
         expected_keys = expected_keys_br if is_br else expected_keys_us
 
-        # Verificar se todos os campos esperados estão presentes e não nulos
+        # Validar presença e não nulidade dos campos
         for key in expected_keys:
             if key not in data or data[key] is None:
                 raise ValueError(f"Campo ausente ou nulo: {key}")
@@ -47,7 +49,7 @@ def predict():
         # Construir vetor de features
         features = np.array([[float(data[key]) for key in expected_keys]])
 
-        # Verificar compatibilidade com o modelo
+        # Validação de compatibilidade com o modelo treinado
         if features.shape[1] != model.n_features_in_:
             raise ValueError(f"Quantidade de features incorreta: esperado {model.n_features_in_}, recebido {features.shape[1]}")
 
