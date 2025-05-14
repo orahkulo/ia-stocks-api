@@ -37,9 +37,10 @@ def predict():
         probs = model.predict_proba(X_input)[0]
 
         return jsonify({
-            "prediction": int(pred),
-            "probability_down_or_neutral": round(float(probs[0]), 4),
-            "probability_up": round(float(probs[1]), 4)
+            "prediction": int(pred),  # 0: queda, 1: neutro, 2: alta
+            "probability_down": round(float(probs[0]), 4),
+            "probability_neutral": round(float(probs[1]), 4),
+            "probability_up": round(float(probs[2]), 4)
         })
 
     except Exception as e:
