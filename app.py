@@ -4,10 +4,11 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Carrega modelos binários treinados para BR e US
+# Carrega os modelos treinados para Brasil e EUA
 model_br = joblib.load('modelo_xgb_BR.pkl')
 model_us = joblib.load('modelo_xgb_US.pkl')
 
+# Define as features esperadas
 expected_features = [
     'ma10', 'ma50', 'rsi',
     'macd_line', 'macd_signal', 'macd_hist',
@@ -20,14 +21,14 @@ expected_features = [
 ]
 
 def eh_ativo_brasileiro(ticker):
-    return ticker.upper().endswith('.SA')
+    return str(ticker).upper().endswith('.SA')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         input_data = request.get_json()
 
-        # Checa o campo ticker
+        # Checa a presença do campo ticker
         if 'ticker' not in input_data or not input_data['ticker']:
             raise ValueError("Campo ausente ou nulo: ticker")
 
@@ -38,9 +39,10 @@ def predict():
             if feature not in input_data or input_data[feature] is None:
                 raise ValueError(f"Campo ausente ou nulo: {feature}")
 
+        # Monta o DataFrame de entrada
         X_input = pd.DataFrame([input_data])[expected_features]
 
-        # Seleciona modelo pelo ticker
+        # Seleciona o modelo conforme o ticker
         if eh_ativo_brasileiro(ticker):
             model = model_br
             mercado = "BR"
@@ -48,14 +50,14 @@ def predict():
             model = model_us
             mercado = "US"
 
-        # Predição
+        # Realiza predição
         pred = model.predict(X_input)[0]
         probs = model.predict_proba(X_input)[0]  # [prob_baixa, prob_alta]
 
         return jsonify({
             "ticker": ticker,
             "mercado": mercado,
-            "prediction": int(pred),              # 0=baixa, 1=alta
+            "prediction": int(pred),              # 0 = baixa, 1 = alta
             "probability_down": round(float(probs[0]), 4),
             "probability_up": round(float(probs[1]), 4)
         })
@@ -64,4 +66,5 @@ def predict():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
+    # Pode ser alterado para host='0.0.0.0' em cloud
     app.run(host='0.0.0.0', port=5000)
