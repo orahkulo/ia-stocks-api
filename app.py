@@ -4,7 +4,7 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# ✅ Carregar o modelo treinado
+# ✅ Carregar o modelo treinado (binário: 0=baixa, 1=alta)
 model = joblib.load('modelo_xgb.pkl')
 
 # ✅ Definir as features esperadas
@@ -34,13 +34,12 @@ def predict():
 
         # ✅ Realizar predição
         pred = model.predict(X_input)[0]
-        probs = model.predict_proba(X_input)[0]
+        probs = model.predict_proba(X_input)[0]  # [prob_baixa, prob_alta]
 
         return jsonify({
-            "prediction": int(pred),  # 0: queda, 1: neutro, 2: alta
+            "prediction": int(pred),          # 0 = baixa, 1 = alta
             "probability_down": round(float(probs[0]), 4),
-            "probability_neutral": round(float(probs[1]), 4),
-            "probability_up": round(float(probs[2]), 4)
+            "probability_up": round(float(probs[1]), 4)
         })
 
     except Exception as e:
