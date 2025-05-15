@@ -4,10 +4,10 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# ✅ Carregar o modelo treinado (binário: 0=baixa, 1=alta)
-model = joblib.load('modelo_xgb.pkl')
+# Carrega modelos binários treinados para BR e US
+model_br = joblib.load('modelo_xgb_BR.pkl')
+model_us = joblib.load('modelo_xgb_US.pkl')
 
-# ✅ Definir as features esperadas
 expected_features = [
     'ma10', 'ma50', 'rsi',
     'macd_line', 'macd_signal', 'macd_hist',
@@ -19,25 +19,43 @@ expected_features = [
     'delta_vix_ma3', 'delta_usdbrl_ma3', 'delta_selic_ma3', 'delta_inflacao_index_ma3'
 ]
 
+def eh_ativo_brasileiro(ticker):
+    return ticker.upper().endswith('.SA')
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         input_data = request.get_json()
 
-        # ✅ Validar presença de todos os campos
+        # Checa o campo ticker
+        if 'ticker' not in input_data or not input_data['ticker']:
+            raise ValueError("Campo ausente ou nulo: ticker")
+
+        ticker = input_data['ticker']
+
+        # Checa todos os campos esperados
         for feature in expected_features:
             if feature not in input_data or input_data[feature] is None:
                 raise ValueError(f"Campo ausente ou nulo: {feature}")
 
-        # ✅ Transformar em DataFrame
         X_input = pd.DataFrame([input_data])[expected_features]
 
-        # ✅ Realizar predição
+        # Seleciona modelo pelo ticker
+        if eh_ativo_brasileiro(ticker):
+            model = model_br
+            mercado = "BR"
+        else:
+            model = model_us
+            mercado = "US"
+
+        # Predição
         pred = model.predict(X_input)[0]
         probs = model.predict_proba(X_input)[0]  # [prob_baixa, prob_alta]
 
         return jsonify({
-            "prediction": int(pred),          # 0 = baixa, 1 = alta
+            "ticker": ticker,
+            "mercado": mercado,
+            "prediction": int(pred),              # 0=baixa, 1=alta
             "probability_down": round(float(probs[0]), 4),
             "probability_up": round(float(probs[1]), 4)
         })
